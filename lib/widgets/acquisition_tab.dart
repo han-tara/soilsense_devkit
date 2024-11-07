@@ -7,9 +7,10 @@ import 'dart:async'; // For StreamSubscription
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart'; // For Clipboard
 import '../screens/home_screen.dart'; // For BulbSettings
+import '../models/capture_data_model.dart'; // Import CaptureData
 
 // Global constant to switch mocking on or off
-const bool isMockMode = true; // Set to false to use real BLE
+const bool isMockMode = false; // Set to false to use real BLE
 
 // BLE Service and Characteristic UUIDs
 final Uuid serviceUuid = Uuid.parse("0000ffe0-0000-1000-8000-00805f9b34fb");
@@ -181,19 +182,6 @@ class MockBleService implements BleService {
   }
 }
 
-// Class to hold each capture's data, label, and color
-class CaptureData {
-  final List<double> data;
-  final String label;
-  final Color color;
-
-  CaptureData({
-    required this.data,
-    required this.label,
-    required this.color,
-  });
-}
-
 class AcquisitionTab extends StatefulWidget {
   const AcquisitionTab({super.key});
 
@@ -203,7 +191,6 @@ class AcquisitionTab extends StatefulWidget {
 
 class _AcquisitionTabState extends State<AcquisitionTab> {
   late final BleService bleService;
-  List<CaptureData> captures = [];
   String connectionStatus = 'Disconnected';
   bool isScanning = false;
   List<DiscoveredDevice> discoveredDevices = [];
@@ -341,6 +328,10 @@ class _AcquisitionTabState extends State<AcquisitionTab> {
     final bulbSettings = Provider.of<BulbSettings>(context, listen: false);
     String bulbState = bulbSettings.bulbState;
 
+    // Access captureDataNotifier
+    final captureDataNotifier =
+        Provider.of<CaptureDataNotifier>(context, listen: false);
+
     try {
       for (int i = 0; i < multiplier; i++) {
         // Send command to device based on bulbState
@@ -360,16 +351,15 @@ class _AcquisitionTabState extends State<AcquisitionTab> {
             stringValues.map((e) => double.tryParse(e) ?? 0.0).toList();
 
         // Generate a color for this capture
-        Color color =
-            Colors.primaries[captures.length % Colors.primaries.length];
+        Color color = Colors.primaries[
+            captureDataNotifier.captures.length % Colors.primaries.length];
 
-        setState(() {
-          captures.add(CaptureData(
-            data: newData,
-            label: label,
-            color: color,
-          ));
-        });
+        // Add capture to notifier
+        captureDataNotifier.addCapture(CaptureData(
+          data: newData,
+          label: label,
+          color: color,
+        ));
       }
     } catch (e) {
       print('Error reading data: $e');
@@ -384,7 +374,7 @@ class _AcquisitionTabState extends State<AcquisitionTab> {
   }
 
   // Function to copy data to clipboard in CSV format
-  void _copyDataToClipboard() {
+  void _copyDataToClipboard(List<CaptureData> captures) {
     // Define the headers
     List<String> headers = [
       'read_rate',
@@ -438,6 +428,10 @@ class _AcquisitionTabState extends State<AcquisitionTab> {
           : 'Unnamed device';
     }
 
+    // Access captures
+    final captureDataNotifier = Provider.of<CaptureDataNotifier>(context);
+    final captures = captureDataNotifier.captures;
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -473,7 +467,7 @@ class _AcquisitionTabState extends State<AcquisitionTab> {
               const SizedBox(height: 20),
               DataInfoSection(
                 numberOfRows: captures.length,
-                onCopyData: _copyDataToClipboard,
+                onCopyData: () => _copyDataToClipboard(captures),
               ),
               const SizedBox(height: 10),
               InputFields(

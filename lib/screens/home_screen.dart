@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../widgets/acquisition_tab.dart';
+import '../models/capture_data_model.dart';
 import '../widgets/models_tab.dart';
+import '../widgets/acquisition_tab.dart';
 import '../widgets/settings_tab.dart';
 
-// Define BulbSettings as a ChangeNotifier to manage shared state
 class BulbSettings extends ChangeNotifier {
   String _bulbState;
 
@@ -20,13 +20,33 @@ class BulbSettings extends ChangeNotifier {
   }
 }
 
+class CaptureDataNotifier extends ChangeNotifier {
+  List<CaptureData> _captures = [];
+
+  List<CaptureData> get captures => _captures;
+
+  void addCapture(CaptureData capture) {
+    _captures.add(capture);
+    notifyListeners();
+  }
+
+  void resetCaptures() {
+    _captures.clear();
+    notifyListeners();
+  }
+}
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<BulbSettings>(
-      create: (_) => BulbSettings(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<BulbSettings>(create: (_) => BulbSettings()),
+        ChangeNotifierProvider<CaptureDataNotifier>(
+            create: (_) => CaptureDataNotifier()),
+      ],
       child: DefaultTabController(
         length: 3,
         initialIndex: 1, // Default to 'acquisition' tab
@@ -78,7 +98,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
               SizedBox(height: 5),
               Text(
-                'Beta Version 1.3 (not the final version)',
+                'Beta Version 1.5 (not the final version)',
                 style: TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ],
