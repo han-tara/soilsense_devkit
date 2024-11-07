@@ -10,19 +10,37 @@ class SettingsTab extends StatelessWidget {
     return Center(
       child: Consumer<BulbSettings>(
         builder: (context, bulbSettings, child) {
-          return DropdownButton<String>(
-            value: bulbSettings.bulbState,
-            items: ['on', 'off'].map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text('Built in bulb: $value'),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                bulbSettings.bulbState = newValue;
-              }
-            },
+          return Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 20.0, vertical: 10.0), // Horizontal 20, Vertical 10
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Acquisition',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Use bulb',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    Switch(
+                      value: bulbSettings.bulbState == 'on',
+                      onChanged: (bool newValue) {
+                        bulbSettings.bulbState = newValue ? 'on' : 'off';
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
           );
         },
       ),
