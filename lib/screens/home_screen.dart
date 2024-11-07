@@ -432,64 +432,87 @@ class _HomeScreenState extends State<HomeScreen> {
           : 'Unnamed device';
     }
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: const CustomAppBar(),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              HeaderSection(
-                connectionStatus: connectionStatus,
-                onConnectionButtonPressed: () {
-                  if (connectionStatus == 'Connected') {
-                    disconnectFromDevice();
-                  } else {
-                    startScan();
-                  }
-                },
-                deviceName: deviceName, // Pass the device name here
+    return DefaultTabController(
+      length: 3,
+      initialIndex: 1, // Default to 'acquisition' tab
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: const CustomAppBar(),
+        body: TabBarView(
+          children: [
+            // Models Tab
+            const Center(
+              child: Text(
+                'Models',
+                style: TextStyle(fontSize: 24),
               ),
-              if (isScanning) ...[
-                const Center(child: CircularProgressIndicator()),
-                const SizedBox(height: 10),
-                const Text('Scanning for devices...'),
-              ] else if (discoveredDevices.isNotEmpty &&
-                  connectionStatus != 'Connected') ...[
-                DeviceList(
-                  devices: discoveredDevices,
-                  onDeviceSelected: (device) {
-                    connectToDevice(device);
-                  },
+            ),
+            // Acquisition Tab
+            SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    HeaderSection(
+                      connectionStatus: connectionStatus,
+                      onConnectionButtonPressed: () {
+                        if (connectionStatus == 'Connected') {
+                          disconnectFromDevice();
+                        } else {
+                          startScan();
+                        }
+                      },
+                      deviceName: deviceName, // Pass the device name here
+                    ),
+                    if (isScanning) ...[
+                      const Center(child: CircularProgressIndicator()),
+                      const SizedBox(height: 10),
+                      const Text('Scanning for devices...'),
+                    ] else if (discoveredDevices.isNotEmpty &&
+                        connectionStatus != 'Connected') ...[
+                      DeviceList(
+                        devices: discoveredDevices,
+                        onDeviceSelected: (device) {
+                          connectToDevice(device);
+                        },
+                      ),
+                    ] else if (connectionStatus == 'Connected') ...[
+                      const SizedBox(height: 20),
+                      ChartContainer(captures: captures),
+                      const SizedBox(height: 20),
+                      DataInfoSection(
+                        numberOfRows: captures.length,
+                        onCopyData: _copyDataToClipboard,
+                      ),
+                      const SizedBox(height: 10),
+                      InputFields(
+                        labelController: labelController,
+                        multiplierController: multiplierController,
+                      ),
+                      const SizedBox(height: 20),
+                      CaptureButton(
+                        isConnected:
+                            connectionStatus == 'Connected' && !isCapturing,
+                        onPressed: readData,
+                      ),
+                      const SizedBox(height: 20),
+                    ] else ...[
+                      const Text('No devices found.'),
+                      const SizedBox(height: 10),
+                    ],
+                  ],
                 ),
-              ] else if (connectionStatus == 'Connected') ...[
-                const NavigationTabs(),
-                const SizedBox(height: 20),
-                ChartContainer(captures: captures),
-                const SizedBox(height: 20),
-                DataInfoSection(
-                  numberOfRows: captures.length,
-                  onCopyData: _copyDataToClipboard,
-                ),
-                const SizedBox(height: 10),
-                InputFields(
-                  labelController: labelController,
-                  multiplierController: multiplierController,
-                ),
-                const SizedBox(height: 20),
-                CaptureButton(
-                  isConnected: connectionStatus == 'Connected' && !isCapturing,
-                  onPressed: readData,
-                ),
-                const SizedBox(height: 20),
-              ] else ...[
-                const Text('No devices found.'),
-                const SizedBox(height: 10),
-              ],
-            ],
-          ),
+              ),
+            ),
+            // Settings Tab
+            const Center(
+              child: Text(
+                'Settings',
+                style: TextStyle(fontSize: 24),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -528,12 +551,12 @@ class DeviceList extends StatelessWidget {
   }
 }
 
-// Custom AppBar Widget
+// Custom AppBar Widget with TabBar
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBar({Key? key}) : super(key: key);
 
   @override
-  Size get preferredSize => const Size.fromHeight(80.0);
+  Size get preferredSize => const Size.fromHeight(130.0);
 
   @override
   Widget build(BuildContext context) {
@@ -573,6 +596,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               size: 24,
             ),
           ),
+        ],
+      ),
+      bottom: const TabBar(
+        tabs: [
+          Tab(icon: Icon(Icons.storage)), // Icon for 'models'
+          Tab(icon: Icon(Icons.sensors)), // Icon for 'acquisition'
+          Tab(icon: Icon(Icons.settings)), // Icon for 'settings'
         ],
       ),
     );
@@ -659,36 +689,6 @@ class HeaderSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-      ],
-    );
-  }
-}
-
-// Navigation Tabs Widget
-class NavigationTabs extends StatelessWidget {
-  const NavigationTabs({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        Text(
-          'overview',
-          style: TextStyle(color: Colors.grey),
-        ),
-        Text(
-          'acquisition',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            decoration: TextDecoration.underline,
-          ),
-        ),
-        Text(
-          'settings',
-          style: TextStyle(color: Colors.grey),
-        ),
       ],
     );
   }
